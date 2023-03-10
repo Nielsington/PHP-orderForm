@@ -15,16 +15,23 @@
         })
     </script>
 </head>
-<body class='.bg-info'>
-    <section>
-        <?php if(isset($_SESSION['domainError'])){
+<body class='bg-dark text-danger'>
+    <section> 
+        <?php 
+            if (isset($_SESSION['domainError']) && isset($_SESSION['zipError'])){
+                echo '<div class="alert alert-danger">'.$_SESSION["domainZipError"].'</div>';
+            } else if(isset($_SESSION['domainError'])){
                 echo '<div class="alert alert-danger">'.$_SESSION["domainError"].'</div>';
+            } else if(isset($_SESSION['zipError'])){
+                echo '<div class="alert alert-danger">'.$_SESSION["zipError"].'</div>';
+            } else if(isset($_SESSION['selectionError'])){
+                echo '<div class="alert alert-info">'.$_SESSION["selectionError"].'</div>';
             }else if(isset($_SESSION['orders'])){
                 echo '<div class="alert alert-success">Order saved!</div>';
             }
         ?>
         <?php 
-            if(isset($_POST['submit'])){
+            if(isset($_SESSION['orders'])){
                 echo '<h3> Thanks for your order! </h3><br>';
                 echo '<h5> Your order: </h5';
             };
@@ -32,9 +39,18 @@
         <ul>
             <?php
             if(isset($_SESSION['orders'])){
-                foreach($_SESSION["orders"] as $index => $order){
-                    echo '<li>'.$index.'</li>' ;
+                $orders = $_SESSION['orders'];
+                $products = $_SESSION['products'];
+                foreach($products as $product){
+                    foreach($orders as $index => $order){
+                        if ($product['name'] === $index ){
+                            $productPrice = $product['price'];
+                            echo '<li>'.$index.'  € '.$productPrice.'</li>' ;
+                        }
+                    };
                 };
+                echo '<br>';
+                echo '<p>You ordered <strong>&euro;'. totalPrice($_SESSION["orders"], $products) . '</strong> in games and drinks.</p>';
                 echo '<br><br>';
             };
             ?>
@@ -51,18 +67,17 @@
 <div class="container">
     <h1>Place your order</h1>
     <?php // Navigation for when you need it ?>
-    <?php /*
+
     <nav>
         <ul class="nav">
             <li class="nav-item">
-                <a class="nav-link active" href="?food=1">Order food</a>
+                <a class="nav-link active" href="?food=1" name="games">Order games</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="?food=0">Order drinks</a>
+                <a class="nav-link" href="?food=0" name="drinks">Order drinks</a>
             </li>
         </ul>
     </nav>
-    */ ?>
 
     <form method="post" action="index.php">
         <div class="form-row">
@@ -99,21 +114,24 @@
         </fieldset>
 
         <fieldset>
-            <legend>Products</legend>
+            <legend>Games</legend>
+            <?php if(isset($_GET['food']) && $_GET['food']== 1): ?>
             <?php foreach ($products as $i => $product): ?>
                 <label>
 					<?php // <?= is equal to <?php echo ?>
-                    <span class="d-inline-block small text-primary font-weight-bold" tabindex="0" data-toggle="tooltip" title="<?= $product['description'] ?>" >?</span>
-                    <input type="checkbox" value="1" name="products[<?php echo $product['name']; ?>]"/> <?php echo $product['name'] ?> -
+                    <span class="d-inline-block small text-info font-weight-bold" tabindex="0" data-toggle="tooltip" title="<?= $product['description'] ?>" >?</span>
+                    <input type="checkbox" value="1" name="products[<?php echo $product['name']; ?>]"/> <?php echo $product['name'].' - '; ?>
                     &euro; <?= number_format($product['price'], 2) ?>
                 </label><br />
             <?php endforeach; ?>
+            <?php endif; ?>
         </fieldset>
 
         <button type="submit" name="submit" value="submit" id="submit" class="btn btn-primary">Order!</button>
     </form>
-
-    <footer>You already ordered <strong>&euro; <?php echo totalPrice($_SESSION['orders'], $products) ?></strong> in food and drinks.</footer>
+    <!-- <?php if(isset($_SESSION["orders"])): ?>
+    <?php echo '<footer>You already ordered <strong>&euro;'. totalPrice($_SESSION["orders"], $products) . '</strong> in food and drinks.</footer>'; ?>
+    <?php endif; ?> -->
 </div>
 
 <style>

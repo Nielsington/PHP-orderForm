@@ -3,26 +3,28 @@
 declare(strict_types=1);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+error_reporting(E_ALL & ~E_WARNING);
 
 session_start();
+$_SESSION['domainZipError'] = null;
 $_SESSION['domainError'] = null;
-
-$_SESSION['adress'] = null;
+$_SESSION['zipError'] = null;
+$_SESSION['orders'] = null;
+$_SESSION['selectionError'] = null;
 
 function whatIsHappening() {
     // echo '<h2>$_GET</h2>';
     // var_dump($_GET);
-    echo '<h2>$_POST</h2>';
-    echo "<pre>";
-    var_dump($_POST);
-    echo "</pre>";
+    // echo '<h2>$_POST</h2>';
+    // echo "<pre>";
+    // var_dump($_POST);
+    // echo "</pre>";
     // echo '<h2>$_COOKIE</h2>';
     // var_dump($_COOKIE);
-    echo '<h2>$_SESSION</h2>';
-    echo "<pre>";
-    print_r($_SESSION);
-    echo "</pre>";
+    // echo '<h2>$_SESSION</h2>';
+    // echo "<pre>";
+    // var_dump($_SESSION);
+    // echo "</pre>";
 }
 whatIsHappening();
 
@@ -85,9 +87,15 @@ $products = [
     ]
 ];
 
-$totalValue = 0;
+$_SESSION['products'] = $products;
 
-function validate()
+$totalValue = 0;
+function navigation(){
+    $navigation = $_GET['food'];
+}
+
+
+function validateMail()
 {
     $email = $_POST['email'];
     $allowedDomains = ['gmail', 'hotmail', 'outlook', 'skynet', 'proton', 'yahoo'];
@@ -100,7 +108,7 @@ function validate()
 
         if(!in_array($emailDomain, $allowedDomains)){
             $wrongDomain = 'Wrong domain name';
-            return[$wrongDomain];
+            return $wrongDomain;
         }
         }else {
             return;
@@ -108,25 +116,52 @@ function validate()
     
 }
 
+function validateZip()
+{
+    $zipcode = $_POST['zipcode'];
+
+    if (ctype_digit($zipcode) === false){
+        $wrongZip = 'Wrong zip format';
+        return $wrongZip;
+    } else {
+        return;
+    }
+}
+
 function handleForm()
 {
-    $invalidFields = validate();
     $adress = [
         "street" => $_POST['street'],
         "streetnumber" => $_POST['streetnumber'],
         "city" => $_POST['city'],
         "zipcode" => $_POST['zipcode'],
         ];
-    if (!empty($invalidFields)) {
-        //handle errors
-        $_SESSION['domainError'] = 'Oops! Wrong domain. Please try again :)';
-        $_SESSION['adress'] = $adress;
-    } else {
-        //handle successful submission
 
-        $_SESSION['adress'] = $adress;
+    $_SESSION['adress'] = $adress;
+    $invalidFields = validateMail();
+    $invalidZip = validateZip();
+
+
+    if (!empty($invalidFields)) {
+        // handle email & zipcode error
+        $_SESSION['domainError'] = 'Oops! Wrong email domain. Please use an emailadress from: <ul><li>gmail</li><li>hotmail</li> <li>outlook</li> <li>skyne</li> <li>proton</li> <li>yahoo</li></ul>';
+    
+        if (!empty($invalidZip)) {
+            $_SESSION['zipError'] = 'Oops! The zipcode may only contain numbers...';
+            $_SESSION['domainZipError'] = 'Oops! Wrong email domain. Please use an emailadress from: <ul><li>gmail</li><li>hotmail</li> <li>outlook</li> <li>skyne</li> <li>proton</li> <li>yahoo</li></ul><br>Also, the zipcode may only contain numbers...';
+        }
+    
+    } else if (!empty($invalidZip)) {
+        $_SESSION['zipError'] = 'Oops! The zipcode may only contain numbers...';
+    
+    } else if (!$_POST['products']) {
+        $_SESSION['selectionError'] = 'Oops! Select some products before pushing submit :)';
+    
+    }else {
+        // handle successful submission
         $_SESSION['orders'] = $_POST['products'];
     }
+    
 }
 
 function totalPrice($order, $products)
@@ -141,6 +176,10 @@ function totalPrice($order, $products)
         }
     $_SESSION['totalPrice'] = $totalPrice;
     return $_SESSION['totalPrice'];
+}
+
+if (isset($_POST["games"])) {
+    navigation();
 }
 
 if (isset($_POST["submit"])) {
